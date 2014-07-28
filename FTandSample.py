@@ -15,38 +15,13 @@ import scipy.misc as misc
 
 
 
-<<<<<<< HEAD
-def create_disc(j, k, a, b, r, n):
+def create_disc(j, k,a, b, r, n):
     array = np.zeros((j,k))
-=======
-
-
-def create_disc(j, k, l, a, b, r, n):
-    array = np.zeros((j,k,l))
->>>>>>> 9fb3d7058ef7b3f4913efa3949d421ecdc862b32
     y,x = np.ogrid[-a:n-a, -b:n-b]
     mask = x*x + y*y <= r*r
     array[mask]= 1
     return array
 
-<<<<<<< HEAD
-def make_antennas(n,m, p, q, r, z):
-    array = np.zeros((n,m))
-    y,x = np.ogrid[-p:z-p, -p:z-p]
-    mask1 = mask = x*x + y*y <= r*r
-    
-    array[mask1]= 1
-=======
-def make_antennas(n,m,o, p, q):
-    array = np.zeros((n,m,o))
-    y,x = np.ogrid[0:n, 0:n]
-    mask1 = y == p
-    mask2 = x==q
-    array[mask1]= 1
-    array[mask2] = 1
->>>>>>> 9fb3d7058ef7b3f4913efa3949d421ecdc862b32
-    return array
-    
 
 def image_input(filename):
     img = mpimg.imread(filename)
@@ -77,11 +52,8 @@ def inv_twod_ft(array):
     return invfttwo
 
 def sample(array1,array2):
-<<<<<<< HEAD
     array1 = np.real(array1)
     array2 = np.real(array2)
-=======
->>>>>>> 9fb3d7058ef7b3f4913efa3949d421ecdc862b32
     return np.multiply(array1,array2)
 
 def continuous_uv_plane(array1, array2):
@@ -92,7 +64,6 @@ def dirty_beam(array):
     dirty_beam = fft.fft2(array)
     return dirty_beam
 
-<<<<<<< HEAD
 def discrete_uv_plane(array):
 
     dim = array.shape
@@ -116,65 +87,49 @@ def discrete_uv_plane(array):
                     
     return b
                 
+
+
+def discrete_uv_VLA(J, J2):
+    bl = []
+    for x,y in J():
+        for x2, y2 in J2():
+            u = (x - x2)/redshifted_lambda(1)
+            v = (y - y2)/redshifted_lambda(1)
+            bl.append((u,v))
+
+    array = np.zeros((600,600))
+
+    for (x,y) in bl:
+        k = 300 +x
+        l = 300 +y
+
+        array[k,l] = 1
+#why is it always out of range!?!?
+
+    return array
+            
+            
             
     
-                    
-                
+
 
 def small_interferometer(): #<100 antennae
-    galaxy = create_disc(8,9,4,5,2,15)
+    galaxy = create_disc(1200,1200,300,301,250,600)
     
-    telescope = make_antennas(8,9,4,5)
-    
+    telescope = VLA_D_config
+
+
     #ftgal = twod_FT(galaxy)
     
-    #uvplane = discrete_uv_plane(telescope)
+    uvplane = discrete_uv_VLA(telescope, telescope)
     
     #sampled_sky = sample(ftgal, uvplane)
     
     #dirty_image = inv_twod_ft(sampled_sky)
 
-   # dirty_image_view = make_image(dirty_image)
-=======
-def discrete_uv_plane(array1, array2):
-
-    n= len(array1)
-
-    b =np.zeros(n)
-
-    for element in xrange(n):
-        x1,y1 = np.ogrid[0:n,0:n]
-        if array1[element] == 0:
-            b[element] = 0
-            
-        elif array1[element] == 1:
-            x2,y2 = np.ogrid[0:n,0:n]
-            for i in xrange(n):
-                if array2[i] ==1:
-                    x2 = i
-                    point = (x1[element]-x2[i])/redshifted_lambda(1), (y1[element]-y2[i])/redshifted_lambda(1)
-                    b[point] = 1
-                elif i ==0:
-                    b[element] = 0
+    dirty_image_view = make_image(uvplane)
 
 
-
-def small_interferometer(): #<100 antennae
-    galaxy = create_disc(8,8,4,5,2,15)
-    
-    telescope = make_antennas
-    
-    ftgal = twod_FT(galaxy)
-    
-    uvplane = discrete_uv_plane(telescope, telescope)
-    
-    sampled_sky = sample(ftgal, uvplane)
-    
-    dirty_image = inv_twod_ft(sampled_sky)
-
-    dirty_image_view = make_image(dirty_image)
-
->>>>>>> 9fb3d7058ef7b3f4913efa3949d421ecdc862b32
     #clean image
 
 
@@ -184,15 +139,12 @@ def large_interferometer(filename): #large >100 antennae
     
     ftgal = twod_FT(galaxy) 
 
-    telescope = make_antennas
+    telescope = VLA_D_config
 
     uvplane = continuous_uv_plane(telescope, telescope) # take output of make_antennas
 
-<<<<<<< HEAD
     sampled_sky = sample(ftgal, uvplane) 
-=======
-    sampled_sky = sample(ftgal, uvplane)
->>>>>>> 9fb3d7058ef7b3f4913efa3949d421ecdc862b32
+
 
     dirty_image = inv_twod_ft(sampled_sky)
 
@@ -204,6 +156,42 @@ def redshifted_lambda(z):
     lambda_obs = (1+z)* 0.21
 
     return lambda_obs
+
+
+def VLA_D_config():
+    b = [] #1 = 1m
+    north_antennas = [0.9, 54.9, 94.9, 134.9, 194.8, 266.4, 347.1, 436.4, 527.6]
+    east_antennas = [39.0, 44.8, 89.9, 147.3, 216.0, 295.4, 384.9, 484.0, 592.4]
+    west_antennas = [39.0, 44.9, 89.9, 147.4, 216.1, 295.5, 384.9, 484.0, 592.4]
+
+    for i in north_antennas:
+        x = 0
+        y = i
+        # need to append an array with x and y values of each point together
+        b.append((x,y))
+
+    for i in east_antennas:
+        x = i * np.cos(np.pi/6)
+        y = i* np.sin(np.pi/6) * -1
+        # need to append an array with x and y values of each point together
+        b.append((x,y))
+
+    for i in west_antennas:
+        x = i * np.cos(np.pi/6)* -1
+        y = i* np.sin(np.pi/6) * -1
+        # need to append an array with x and y values of each point together
+        b.append((x,y))
+
+
+    return b
+
+def angofres():
+
+    bl_max = np.sqrt((527.6 + 592.4*(np.sin(np.pi/6)))**2 + (np.sin(np.pi/6))**2)
+
+    angle_of_resolution = redshifted_lambda(1)/ bl_max
+
+    return angle_of_resolution
 
     
 #def deconvolve(array):
