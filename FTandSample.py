@@ -89,10 +89,11 @@ def dirty_beam(array):
                 
 
 
-def discrete_uv_VLA(J, J2):
+def discrete_uv_VLA(antennas):
+    antennas = antennas()
     bl = []
-    for x,y in J():
-        for x2, y2 in J2():
+    for x,y in antennas:
+        for x2, y2 in antennas:
             u = (x - x2)/redshifted_lambda(1)
             v = (y - y2)/redshifted_lambda(1)
             bl.append((u,v))
@@ -102,45 +103,44 @@ def discrete_uv_VLA(J, J2):
     maxx, maxy = np.max(bl[:,0]), np.max(bl[:,1])
     minx, miny =  np.min(bl[:,0]), np.min(bl[:,1])
 
-    length = 5000.0
-    nuv = 600
+    length = maxx - minx
+    nuv = 400
     array = np.zeros((nuv,nuv))
 
     for (u,v) in bl:
-        k = 300 +u/length
-        l = 300 +v/length
+        k = 199+ u/(length/400)
+        l = 199 + v/(length/400)
 
-        array[k,l] = 1
-#why is it always out of range!?!?
+        array[(k,l)] = 1
+
 
     return array
-            
-            
-            
-    
 
+    
 
 def small_interferometer(): #<100 antennae
-    galaxy = create_disc(600,600,300,301,250,600)
     
+    galaxy = create_disc(400,400,201,200, 25 ,500)
+
     telescope = VLA_D_config
 
+    ftgal = twod_FT(galaxy)
+    
+    uvplane = discrete_uv_VLA(telescope)
 
-    #ftgal = twod_FT(galaxy)
+    sky = make_image(uvplane)
     
-    uvplane = discrete_uv_VLA(telescope, telescope)
+    sampled_sky = sample(ftgal,uvplane)
     
-    #sampled_sky = sample(ftgal, uvplane)
-    
-    #dirty_image = inv_twod_ft(sampled_sky)
+    dirty_image = inv_twod_ft(sampled_sky)
 
-    dirty_image_view = make_image(uvplane)
+    dirty_image_view = make_image(sampled_sky)
 
 
     #clean image
 
 
-def large_interferometer(filename): #large >100 antennae
+"""def large_interferometer(filename): #large >100 antennae
 
     galaxy = make_image(filename)
     
@@ -157,7 +157,7 @@ def large_interferometer(filename): #large >100 antennae
 
     dirty_image_view = make_image(dirty_image)
 
-    #clean_image = deconvolve(dirty_image)
+    #clean_image = deconvolve(dirty_image)"""
 
 def redshifted_lambda(z):
     lambda_obs = (1+z)* 0.21
