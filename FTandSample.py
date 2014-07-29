@@ -97,11 +97,20 @@ def discrete_uv_VLA(J, J2):
             v = (y - y2)/redshifted_lambda(1)
             bl.append((u,v))
 
-    array = np.zeros((600,600))
+    #print bl
+    bl = np.array(bl)
 
-    for (x,y) in bl:
-        k = 300 +x
-        l = 300 +y
+    print np.max(bl[:,0]), np.max(bl[:,1])
+    print np.min(bl[:,0]), np.min(bl[:,1])
+
+    length = 5000.0
+    print length
+    nuv = 600
+    array = np.zeros((nuv,nuv))
+
+    for (u,v) in bl:
+        k = 300 +u
+        l = 300 +v
 
         array[k,l] = 1
 #why is it always out of range!?!?
