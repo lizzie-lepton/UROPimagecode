@@ -64,7 +64,7 @@ def dirty_beam(array):
     dirty_beam = fft.fft2(array)
     return dirty_beam
 
-def discrete_uv_plane(array):
+"""def discrete_uv_plane(array):
 
     dim = array.shape
 
@@ -85,7 +85,7 @@ def discrete_uv_plane(array):
                     else:
                         pass
                     
-    return b
+    return b"""
                 
 
 
@@ -96,21 +96,19 @@ def discrete_uv_VLA(J, J2):
             u = (x - x2)/redshifted_lambda(1)
             v = (y - y2)/redshifted_lambda(1)
             bl.append((u,v))
-
-    #print bl
+            
     bl = np.array(bl)
 
-    print np.max(bl[:,0]), np.max(bl[:,1])
-    print np.min(bl[:,0]), np.min(bl[:,1])
+    maxx, maxy = np.max(bl[:,0]), np.max(bl[:,1])
+    minx, miny =  np.min(bl[:,0]), np.min(bl[:,1])
 
     length = 5000.0
-    print length
     nuv = 600
     array = np.zeros((nuv,nuv))
 
     for (u,v) in bl:
-        k = 300 +u
-        l = 300 +v
+        k = 300 +u/length
+        l = 300 +v/length
 
         array[k,l] = 1
 #why is it always out of range!?!?
@@ -123,7 +121,7 @@ def discrete_uv_VLA(J, J2):
 
 
 def small_interferometer(): #<100 antennae
-    galaxy = create_disc(1200,1200,300,301,250,600)
+    galaxy = create_disc(600,600,300,301,250,600)
     
     telescope = VLA_D_config
 
