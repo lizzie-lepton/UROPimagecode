@@ -9,10 +9,6 @@ import scipy.misc as misc
 #line on the group maps to an angular scale on the sky. This will help get to grips with images that have
 #pixels smaller than the resolution of the telescope.
 
-# take an image and turn into a bit map that can be processed.
-
-#make an antenna array more easily.
-
 
 
 def create_disc(j, k,a, b, r, n):
@@ -31,25 +27,11 @@ def image_input(filename):
 
 def make_image(array):
     array = np.real(array)
-    imgplot = plt.imshow(array)
+    imgplot = plt.imshow(np.absolute(array), cmap = "gist_yarg")
+    imgplot.set_clim(0.001, 0.002)
+    plt.colorbar()
     plt.show()
-    return imgplot
 
-def oned_FT(x):
-    FT = fft.fft(x)
-    return FT
-
-def twod_FT(array):
-    twoFT = fft.fft2(array)
-    return twoFT
-
-def inv_FT(array):
-    invft = fft.ifft(array)
-    return invft
-
-def inv_twod_ft(array):
-    invfttwo = fft.ifft2(array)
-    return invfttwo
 
 def sample(array1,array2):
     array1 = np.real(array1)
@@ -89,7 +71,7 @@ def dirty_beam(array):
                 
 
 
-def discrete_uv_VLA(antennas):
+def discrete_uv_VLA(antennas, nuv):
     antennas = antennas()
     bl = []
     for x,y in antennas:
@@ -104,12 +86,11 @@ def discrete_uv_VLA(antennas):
     minx, miny =  np.min(bl[:,0]), np.min(bl[:,1])
 
     length = maxx - minx
-    nuv = 400
     array = np.zeros((nuv,nuv))
 
     for (u,v) in bl:
-        k = 199+ u/(length/400)
-        l = 199 + v/(length/400)
+        k = (170) + (u/(length/nuv))
+        l = (249) + (v/(length/nuv))
 
         array[(k,l)] = 1
 
@@ -118,26 +99,23 @@ def discrete_uv_VLA(antennas):
 
     
 
-def small_interferometer(): #<100 antennae
+def small_interferometer(nuv,r): #<100 antennae
+
+    centre = nuv/2
     
-    galaxy = create_disc(400,400,201,200, 25 ,500)
+    galaxy = create_disc(nuv,nuv,centre,centre,r,nuv)
 
     telescope = VLA_D_config
 
-    ftgal = twod_FT(galaxy)
+    ftgal = fft.fft2(galaxy)
     
-    uvplane = discrete_uv_VLA(telescope)
-
-    sky = make_image(uvplane)
+    uvplane = discrete_uv_VLA(telescope, nuv)
     
     sampled_sky = sample(ftgal,uvplane)
     
-    dirty_image = inv_twod_ft(sampled_sky)
+    dirty_image = fft.ifft2(sampled_sky)
 
-    dirty_image_view = make_image(sampled_sky)
-
-
-    #clean image
+    dirty_image_view = make_image(dirty_image)
 
 
 """def large_interferometer(filename): #large >100 antennae
@@ -159,6 +137,7 @@ def small_interferometer(): #<100 antennae
 
     #clean_image = deconvolve(dirty_image)"""
 
+
 def redshifted_lambda(z):
     lambda_obs = (1+z)* 0.21
 
@@ -174,19 +153,16 @@ def VLA_D_config():
     for i in north_antennas:
         x = 0
         y = i
-        # need to append an array with x and y values of each point together
         b.append((x,y))
 
     for i in east_antennas:
         x = i * np.cos(np.pi/6)
         y = i* np.sin(np.pi/6) * -1
-        # need to append an array with x and y values of each point together
         b.append((x,y))
 
     for i in west_antennas:
         x = i * np.cos(np.pi/6)* -1
         y = i* np.sin(np.pi/6) * -1
-        # need to append an array with x and y values of each point together
         b.append((x,y))
 
 
