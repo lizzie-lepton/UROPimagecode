@@ -5,13 +5,20 @@ import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.misc as misc
 
+
+"""to run:
+
+for an interferometer with fewer than 100 antennas: run small_interferometer(size of uv plane, radius of disc)
+for an interferometer with more than 100 antennas run large_interferometer()"""
+
+
 #move towards more general antennae and image size arrays. Understanding how a given physical base
 #line on the group maps to an angular scale on the sky. This will help get to grips with images that have
 #pixels smaller than the resolution of the telescope.
 
 
 
-def create_disc(j, k,a, b, r, n):
+def create_disc(j, k,a, b, r, n):    
     array = np.zeros((j,k))
     y,x = np.ogrid[-a:n-a, -b:n-b]
     mask = x*x + y*y <= r*r
@@ -25,7 +32,7 @@ def image_input(filename):
 
     
 
-def make_image(array):
+def make_image(array):  
     array = np.real(array)
     imgplot = plt.imshow(np.absolute(array), cmap = "gist_yarg")
     imgplot.set_clim(0.001, 0.002)
@@ -71,7 +78,7 @@ def dirty_beam(array):
                 
 
 
-def discrete_uv_VLA(antennas, nuv):
+def discrete_uv_VLA(antennas, nuv):  #a method to get the discrete uv sampling distribution for the VLA telescope. will generalise for other telescopes soon
     antennas = antennas()
     bl = []
     for x,y in antennas:
@@ -118,7 +125,7 @@ def small_interferometer(nuv,r): #<100 antennae
     dirty_image_view = make_image(dirty_image)
 
 
-"""def large_interferometer(filename): #large >100 antennae
+def large_interferometer(filename): #large >100 antennae
 
     galaxy = make_image(filename)
     
@@ -135,7 +142,7 @@ def small_interferometer(nuv,r): #<100 antennae
 
     dirty_image_view = make_image(dirty_image)
 
-    #clean_image = deconvolve(dirty_image)"""
+    #clean_image = deconvolve(dirty_image)
 
 
 def redshifted_lambda(z):
