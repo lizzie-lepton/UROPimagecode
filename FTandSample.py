@@ -96,14 +96,33 @@ def discrete_uv_VLA(antennas, nuv):  #a method to get the discrete uv sampling d
     array = np.zeros((nuv,nuv))
 
     for (u,v) in bl:
-        k = (170) + (u/(length/nuv))
-        l = (249) + (v/(length/nuv))
+        skypoint = np.array([[u],[v]])
 
-        array[(k,l)] = 1
+        for x in range(0,3,1):
+            rotation_array = np.array([[np.sin(x), np.cos(x)], [np.cos(x), (-1*np.sin(x))]])
+            rotated = np.dot(rotation_array, skypoint)
+            p = np.absolute(rotated[0])
+            q = np.absolute(rotated[1])
+            k = int((nuv/2) -1 + (p/(length/nuv)))
+            l = (nuv/2) -1 + (q/(length/nuv)
 
+          
+            
+           array[k,l] = 1
 
     return array
 
+
+    
+        
+    
+
+    
+
+            
+         
+    
+    
     
 
 def small_interferometer(nuv,r): #<100 antennae
@@ -122,7 +141,7 @@ def small_interferometer(nuv,r): #<100 antennae
     
     dirty_image = fft.ifft2(sampled_sky)
 
-    dirty_image_view = make_image(dirty_image)
+    dirty_image_view = make_image(ers)
 
 
 def large_interferometer(filename): #large >100 antennae
