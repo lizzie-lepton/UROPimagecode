@@ -59,7 +59,9 @@ def dirty_beam(array):
 
     b =np.zeros(dim)
 
-    for (x1,y1), value in np.ndenumerate(array):
+
+
+    
         if array[x1,y1] == 0:
             b[x1,y1] = 0
         else:
@@ -78,7 +80,7 @@ def dirty_beam(array):
                 
 
 
-def discrete_uv_VLA(antennas, nuv):  #a method to get the discrete uv sampling distribution for the VLA telescope. will generalise for other telescopes soon
+def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling distribution for the VLA telescope. will generalise for other telescopes soon
     antennas = antennas()
     bl = []
     for x,y in antennas:
@@ -86,39 +88,46 @@ def discrete_uv_VLA(antennas, nuv):  #a method to get the discrete uv sampling d
             u = (x - x2)/redshifted_lambda(1)
             v = (y - y2)/redshifted_lambda(1)
             bl.append((u,v))
-            
     bl = np.array(bl)
-
     maxx, maxy = np.max(bl[:,0]), np.max(bl[:,1])
-    minx, miny =  np.min(bl[:,0]), np.min(bl[:,1])
-
+    minx, miny = np.min(bl[:,0]), np.min(bl[:,1])
     length = maxx - minx
     array = np.zeros((nuv,nuv))
-
     for (u,v) in bl:
-        skypoint = np.array([[u],[v]])
+        k = (nuv/2 -1) + (u/(length/nuv))
+        l = (nuv/2 -1) + (v/(length/nuv))
 
-        for x in range(0,3,1):
-            rotation_array = np.array([[np.sin(x), np.cos(x)], [np.cos(x), (-1*np.sin(x))]])
-            rotated = np.dot(rotation_array, skypoint)
-            p = np.absolute(rotated[0])
-            q = np.absolute(rotated[1])
-            k = int((nuv/2) -1 + (p/(length/nuv)))
-            l = (nuv/2) -1 + (q/(length/nuv)
-
-          
-            
-           array[k,l] = 1
-
+        array[(k,l)] = 1
     return array
-
+    return length
 
     
         
+"""def earth_rotation_synthesis(array,nuv):
     
 
-    
+    finalsky = np.zeros((nuv,nuv))
+    uvlist = []
+    for x,y in np.ndenumerate(array):
+        uvlist.append((x,y))
 
+        
+    for (x,y) in uvlist:
+       skypoint = np.array([[x],[y],[0]])
+       for H in range(0,3,1):
+           d = 0
+           rotation_array = np.array([[np.sin(H), np.cos(H), 0], [-np.sin(d)*np.cos(H), np.sin(d)*np.sin(H), np.cos(d)], [np.cos(x)*np.cos(d), (-1*np.cos(d)*np.sin(x)), np.sin(d)]])
+           rotated = np.dot(rotation_array, skypoint) #this is giving a weird error- ValueError: setting an array element with a sequence.
+           p = nuv/2 + int(rotated[0]) 
+           q= nuv/2 + int(rotated[1])
+           finalsky[(p,q)] = 1
+           
+    final_sky = np.real(finalsky)
+    imgplot = plt.imshow(final_sky, cmap = "gist_yarg")
+    plt.show()      
+
+
+    return final_sky"""
             
          
     
@@ -141,7 +150,11 @@ def small_interferometer(nuv,r): #<100 antennae
     
     dirty_image = fft.ifft2(sampled_sky)
 
-    dirty_image_view = make_image(ers)
+    dirtybeam = dirty_beam(uvplane)
+
+    deconvolved = hogbom(dirty_image, dirtybeam, True, 0.1, 1, 10000)
+
+    clean_image_view = make_image(deconvolved)
 
 
 def large_interferometer(filename): #large >100 antennae
@@ -203,9 +216,81 @@ def angofres():
     return angle_of_resolution
 
     
-#def deconvolve(array):
-    
-#def Earth_rotation_synthesis(array): DO I ADD INTO THE UV PLANE METHODS?
+
+
+
+def overlapIndices(a1, a2, 
+                   shiftx, shifty):
+    if shiftx >=0:
+        a1xbeg=shiftx
+        a2xbeg=0
+        a1xend=a1.shape[0]
+        a2xend=a1.shape[0]-shiftx
+    else:
+        a1xbeg=0
+        a2xbeg=-shiftx
+        a1xend=a1.shape[0]+shiftx
+        a2xend=a1.shape[0]
+
+    if shifty >=0:
+        a1ybeg=shifty
+        a2ybeg=0
+        a1yend=a1.shape[1]
+        a2yend=a1.shape[1]-shifty
+    else:
+        a1ybeg=0
+        a2ybeg=-shifty
+        a1yend=a1.shape[1]+shifty
+        a2yend=a1.shape[1]
+
+    return (a1xbeg, a1xend, a1ybeg, a1yend), (a2xbeg, a2xend, a2ybeg, a2yend)
+
+        
+
+def hogbom(dirty,
+           psf,
+           window,
+           gain,
+           thresh,
+           niter):
+    """
+    Hogbom clean
+
+    :param dirty: The dirty image, i.e., the image to be deconvolved
+
+    :param psf: The point spread-function
+
+    :param window: Regions where clean components are allowed. If
+    True, thank all of the dirty image is assumed to be allowed for
+    clean components
+
+    :param gain: The "loop gain", i.e., the fraction of the brightest
+    pixel that is removed in each iteration
+
+    :param thresh: Cleaning stops when the maximum of the absolute
+    deviation of the residual is less than this value
+
+    :param niter: Maximum number of components to make if the
+    threshold "thresh" is not hit
+    """
+    comps=np.zeros(dirty.shape)
+    res=np.array(dirty)
+    if window is True:
+        window=np.ones(dirty.shape,
+                          np.bool)
+    for i in range(niter):
+        mx, my=np.unravel_index(np.fabs(res[window]).argmax(), res.shape)
+        mval=res[mx, my]*gain
+        comps[mx, my]+=mval
+        a1o, a2o=overlapIndices(dirty, psf,
+                                mx-dirty.shape[0]/2,
+                                my-dirty.shape[1]/2)
+        res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
+        if np.fabs(res).max() < thresh:
+            break
+    return comps, res
+        
+        
 
 
 
