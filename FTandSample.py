@@ -101,13 +101,13 @@ def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling di
     return array
     return length
 
-    
-        def earth_rotation_synthesis(array,nuv):
+
+def earth_rotation_synthesis(array,nuv):
     
 
     finalsky = np.zeros((nuv,nuv))
     uvlist = []
-    for x,y in np.ndenumerate(array):
+    for x,y,value in np.ndenumerate(array):
         uvlist.append((x,y))
 
         
@@ -116,7 +116,7 @@ def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling di
        for H in range(0,3,1):
            d = 0
            rotation_array = np.array([[np.sin(H), np.cos(H), 0], [-np.sin(d)*np.cos(H), np.sin(d)*np.sin(H), np.cos(d)], [np.cos(x)*np.cos(d), (-1*np.cos(d)*np.sin(x)), np.sin(d)]])
-           rotated = np.dot(rotation_array, skypoint) #this is giving a weird error- ValueError: setting an array element with a sequence.
+           rotated = np.dot(rotation_array, skypoint) 
            p = nuv/2 + int(rotated[0]) 
            q= nuv/2 + int(rotated[1])
            finalsky[(p,q)] = 1
@@ -129,8 +129,6 @@ def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling di
     return final_sky
             
          
-    
-    
     
 
 def small_interferometer(nuv,r): #<100 antennae
@@ -278,16 +276,17 @@ def hogbom(dirty,
         window=np.ones(dirty.shape,
                           np.bool)
     for i in range(niter):
-        mx, my=np.unravel_index(np.fabs(res[window]).argmax(), res.shape)
-        mval=res[mx, my]*gain
-        comps[mx, my]+=mval
-        a1o, a2o=overlapIndices(dirty, psf,
-                                mx-dirty.shape[0]/2,
-                                my-dirty.shape[1]/2)
-        res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
-        if np.fabs(res).max() < thresh:
-            break
-    return comps, res
+        print i
+        #mx, my=np.unravel_index(np.fabs(res[window]).argmax(), res.shape)
+        #mval=res[mx, my]*gain
+        #comps[mx, my]+=mval
+        #a1o, a2o=overlapIndices(dirty, psf,
+                                #mx-dirty.shape[0]/2,
+                                #my-dirty.shape[1]/2)
+      #  res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
+       # if np.fabs(res).max() < thresh:
+           # break
+   # return comps, res
         
         
 
