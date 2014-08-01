@@ -26,15 +26,15 @@ def create_disc(j, k,a, b, r, n):
     return array
 
 
-def image_input(filename):http://stackoverflow.com/questions/22725421/typeerror-with-ufunc-bitwise-xor
+def image_input(filename):
     img = mpimg.imread(filename)
     return img
 
     
 
-def make_image(array):  
+def make_image(array):
     array = np.real(array)
-    imgplot = plt.imshow(np.absolute(array), cmap = "gist_yarg")
+    imgplot = plt.imshow(array, cmap = "gist_yarg")
     imgplot.set_clim(0.001, 0.002)
     plt.colorbar()
     plt.show()
@@ -99,34 +99,41 @@ def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling di
 
         array[(k,l)] = 1
     return array
-    return length
 
 
 def earth_rotation_synthesis(array,nuv):
-    
-
     finalsky = np.zeros((nuv,nuv))
-    uvlist = []
-    for x,y,value in np.ndenumerate(array):
-        uvlist.append((x,y))
 
+    for (x,y),value in np.ndenumerate(array):
+        skypoint = np.array([[x],[y],[0]])
+        H = [0,1,2,3]
+        for i in H :
+            d = 0
+            rotation_array = np.array([[np.sin(i), np.cos(i), 0], [-np.sin(d)*np.cos(i), np.sin(d)*np.sin(i), np.cos(d)], [np.cos(i)*np.cos(d), (-1*np.cos(d)*np.sin(i)), np.sin(d)]])
+            rotated = np.dot(rotation_array, skypoint)
+            maxx = np.max(rotated[0])
+            minx = np.min(rotated[1])
+            length = maxx - minx
+
+            
+            p = nuv/2 + ((rotated[0]*nuv)/length)
+            q = nuv/2 + ((rotated[1]*nuv)/length)
+
+            if np.isnan(p) == False and np.isnan(q) == False:
+
+                r = int(p)
+                s = int(q)
+                finalsky[(r,s)] = 1
+
+            else:
+                pass
+                
+
+            return finalsky
         
-    for (x,y) in uvlist:
-       skypoint = np.array([[x],[y],[0]])
-       for H in range(0,3,1):
-           d = 0
-           rotation_array = np.array([[np.sin(H), np.cos(H), 0], [-np.sin(d)*np.cos(H), np.sin(d)*np.sin(H), np.cos(d)], [np.cos(x)*np.cos(d), (-1*np.cos(d)*np.sin(x)), np.sin(d)]])
-           rotated = np.dot(rotation_array, skypoint) 
-           p = nuv/2 + int(rotated[0]) 
-           q= nuv/2 + int(rotated[1])
-           finalsky[(p,q)] = 1
-           
-    final_sky = np.real(finalsky)
-    imgplot = plt.imshow(final_sky, cmap = "gist_yarg")
-    plt.show()      
+        
+        
 
-
-    return final_sky
             
          
     
@@ -140,18 +147,19 @@ def small_interferometer(nuv,r): #<100 antennae
     telescope = VLA_D_config
 
     ftgal = fft.fft2(galaxy)
-    
     uvplane = discrete_uv_VLA(telescope, nuv)
+
+    rotated = earth_rotation_synthesis(uvplane,nuv)
+
+    make_image(rotated)
     
-    sampled_sky = sample(ftgal,uvplane)
+   # sampled_sky = sample(ftgal,uvplane)
     
-    dirty_image = fft.ifft2(sampled_sky)
+    #dirty_image = fft.ifft2(sampled_sky)
 
-    dirtybeam = dirty_beam(uvplane)
+    #dirtybeam = dirty_beam(uvplane)
 
-    deconvolved = hogbom(dirty_image, dirtybeam, True, 0.1, 1, 10000)
-
-    clean_image_view = make_image(deconvolved)
+    #deconvolved = hogbom(dirty_image, dirtybeam, True, 0.1, 1, 1000)
 
 
 def large_interferometer(filename): #large >100 antennae
@@ -171,7 +179,7 @@ def large_interferometer(filename): #large >100 antennae
 
     dirty_image_view = make_image(dirty_image)
 
-    #clean_image = deconvolve(dirty_image)
+    clean_image = deconvolve(dirty_image)
 
 
 def redshifted_lambda(z):
@@ -276,17 +284,19 @@ def hogbom(dirty,
         window=np.ones(dirty.shape,
                           np.bool)
     for i in range(niter):
-        print i
-        #mx, my=np.unravel_index(np.fabs(res[window]).argmax(), res.shape)
-        #mval=res[mx, my]*gain
-        #comps[mx, my]+=mval
-        #a1o, a2o=overlapIndices(dirty, psf,
-                                #mx-dirty.shape[0]/2,
-                                #my-dirty.shape[1]/2)
-      #  res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
-       # if np.fabs(res).max() < thresh:
-           # break
-   # return comps, res
+        mx, my=np.unravel_index(np.argmax(np.absolute(res[window])), res.shape)
+        mval=res[mx, my]*gain
+        comps[mx, my]+=mval
+        a1o, a2o=overlapIndices(dirty, psf,
+                                mx-dirty.shape[0]/2,
+                                my-dirty.shape[1]/2)
+        res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
+        if np.absolute(res).max() < thresh:
+           break
+    make_image(comps)
+    make_image(res)
+
+   
         
         
 
