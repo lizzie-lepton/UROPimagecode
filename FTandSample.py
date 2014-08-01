@@ -26,7 +26,7 @@ def create_disc(j, k,a, b, r, n):
     return array
 
 
-def image_input(filename):
+def image_input(filename):http://stackoverflow.com/questions/22725421/typeerror-with-ufunc-bitwise-xor
     img = mpimg.imread(filename)
     return img
 
@@ -102,8 +102,7 @@ def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling di
     return length
 
     
-        
-"""def earth_rotation_synthesis(array,nuv):
+        def earth_rotation_synthesis(array,nuv):
     
 
     finalsky = np.zeros((nuv,nuv))
@@ -127,7 +126,7 @@ def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling di
     plt.show()      
 
 
-    return final_sky"""
+    return final_sky
             
          
     
