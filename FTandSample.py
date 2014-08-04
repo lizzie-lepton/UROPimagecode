@@ -4,6 +4,7 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.misc as misc
+import math
 
 
 """to run:
@@ -103,35 +104,37 @@ def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling di
 
 def earth_rotation_synthesis(array,nuv):
     finalsky = np.zeros((nuv,nuv))
+    listr = []
+    lists = []
 
     for (x,y),value in np.ndenumerate(array):
         skypoint = np.array([[x],[y],[0]])
         H = [0,1,2,3]
         for i in H :
-            d = 0
+            d = 0.1
             rotation_array = np.array([[np.sin(i), np.cos(i), 0], [-np.sin(d)*np.cos(i), np.sin(d)*np.sin(i), np.cos(d)], [np.cos(i)*np.cos(d), (-1*np.cos(d)*np.sin(i)), np.sin(d)]])
             rotated = np.dot(rotation_array, skypoint)
-            maxx = np.max(rotated[0])
-            minx = np.min(rotated[1])
-            length = maxx - minx
+ 
+            p = rotated[0]
+    
+            q = rotated[1]
+         
 
-            
-            p = nuv/2 + ((rotated[0]*nuv)/length)
-            q = nuv/2 + ((rotated[1]*nuv)/length)
-
-            if np.isnan(p) == False and np.isnan(q) == False:
-
-                r = int(p)
-                s = int(q)
-                finalsky[(r,s)] = 1
+            if np.isfinite(p)==True and np.isfinite(q)== True:
+                listr.append(int(p))
+                lists.append(int(q))
 
             else:
-                pass
-                
+                continue
 
-            return finalsky
-        
-        
+    for i in listr:
+                
+        for j in lists:
+            x= i*nuv / max(np.absolute(listr)) -1
+            y = j*nuv/ max(np.absolute(lists)) -1
+            finalsky[(x,y)] =1
+
+    return finalsky
         
 
             
@@ -147,13 +150,14 @@ def small_interferometer(nuv,r): #<100 antennae
     telescope = VLA_D_config
 
     ftgal = fft.fft2(galaxy)
+    
     uvplane = discrete_uv_VLA(telescope, nuv)
 
     rotated = earth_rotation_synthesis(uvplane,nuv)
 
-    make_image(rotated)
+    view_uvplane = make_image(rotated)
     
-   # sampled_sky = sample(ftgal,uvplane)
+    #sampled_sky = sample(ftgal,uvplane)
     
     #dirty_image = fft.ifft2(sampled_sky)
 
@@ -164,7 +168,7 @@ def small_interferometer(nuv,r): #<100 antennae
 
 def large_interferometer(filename): #large >100 antennae
 
-    galaxy = make_image(filename)
+    galaxy =create_disc(filename)
     
     ftgal = twod_FT(galaxy) 
 
@@ -172,14 +176,16 @@ def large_interferometer(filename): #large >100 antennae
 
     uvplane = continuous_uv_plane(telescope, telescope) # take output of make_antennas
 
-    sampled_sky = sample(ftgal, uvplane) 
+    
+
+    #sampled_sky = sample(ftgal, uvplane) 
 
 
-    dirty_image = inv_twod_ft(sampled_sky)
+    #dirty_image = inv_twod_ft(sampled_sky)
 
-    dirty_image_view = make_image(dirty_image)
+    #dirty_image_view = make_image(dirty_image)
 
-    clean_image = deconvolve(dirty_image)
+    #clean_image = deconvolve(dirty_image)
 
 
 def redshifted_lambda(z):
@@ -293,8 +299,6 @@ def hogbom(dirty,
         res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
         if np.absolute(res).max() < thresh:
            break
-    make_image(comps)
-    make_image(res)
 
    
         
