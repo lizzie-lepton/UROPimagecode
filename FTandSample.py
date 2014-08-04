@@ -130,8 +130,8 @@ def earth_rotation_synthesis(array,nuv):
     for i in listr:
                 
         for j in lists:
-            x= i*nuv / max(np.absolute(listr)) -1
-            y = j*nuv/ max(np.absolute(lists)) -1
+            x= i*nuv / max(np.absolute(listr)) 
+            y = j*nuv/ max(np.absolute(lists)) 
             finalsky[(x,y)] =1
 
     return finalsky
