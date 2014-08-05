@@ -108,31 +108,46 @@ def earth_rotation_synthesis(array,nuv):
     lists = []
 
     for (x,y),value in np.ndenumerate(array):
-        skypoint = np.array([[x],[y],[0]])
-        H = [0,1,2,3]
-        for i in H :
+        #print x,y,value
+        skypoint = np.array([x,y,0])
+        Hs = np.array([0,1,2,3])*np.pi/4.0
+        #H = [np.pi/2.0]
+        for H in Hs :
             d = 0.1
-            rotation_array = np.array([[np.sin(i), np.cos(i), 0], [-np.sin(d)*np.cos(i), np.sin(d)*np.sin(i), np.cos(d)], [np.cos(i)*np.cos(d), (-1*np.cos(d)*np.sin(i)), np.sin(d)]])
+            d= np.pi/2.0
+            rotation_array = np.array([[np.sin(H), np.cos(H), 0], [-np.sin(d)*np.cos(H), np.sin(d)*np.sin(H), np.cos(d)], [np.cos(H)*np.cos(d), (-1*np.cos(d)*np.sin(H)), np.sin(d)]])
+            #print rotation_array
             rotated = np.dot(rotation_array, skypoint)
- 
+            #print rotated, skypoint
+            
             p = rotated[0]
     
             q = rotated[1]
          
 
-            if np.isfinite(p)==True and np.isfinite(q)== True:
+            if np.isfinite(p)==True and np.isfinite(q)== True and value>0.0:
                 listr.append(int(p))
                 lists.append(int(q))
 
             else:
                 continue
 
-    for i in listr:
-                
-        for j in lists:
-            x= i*nuv / max(np.absolute(listr)) 
-            y = j*nuv/ max(np.absolute(lists)) 
-            finalsky[(x,y)] =1
+    i = np.array(listr)
+    j = np.array(lists)
+    x = i * (nuv-1) / max(np.absolute(listr))
+    y = j * (nuv-1) / max(np.absolute(lists))
+
+    #print x
+
+    for indx in range(len(y)):
+        finalsky[(x[indx],y[indx])]=1
+
+    #for i in listr:
+    #            
+    #    for j in lists:
+    #        x= i*nuv / max(np.absolute(listr)) 
+    #        y = j*nuv/ max(np.absolute(lists)) 
+    #        finalsky[(x,y)] =1
 
     return finalsky
         
