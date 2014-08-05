@@ -83,77 +83,59 @@ def dirty_beam(array):
 
 def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling distribution for the VLA telescope. will generalise for other telescopes soon
     antennas = antennas()
-    bl = []
+    basel = []
     for x,y in antennas:
         for x2, y2 in antennas:
             u = (x - x2)/redshifted_lambda(1)
             v = (y - y2)/redshifted_lambda(1)
-            bl.append((u,v))
-    bl = np.array(bl)
-    maxx, maxy = np.max(bl[:,0]), np.max(bl[:,1])
-    minx, miny = np.min(bl[:,0]), np.min(bl[:,1])
-    length = maxx - minx
+            basel.append((u,v))
+
+    return basel
+
+
+
+
+
+def grid(points,nuv):   
+    points = np.array(points)
+    klist =[]
+    llist =[]
+    maxx, maxy = np.max(points[:,0]), np.max(points[:,1])
+    minx, miny = np.min(points[:,0]), np.min(points[:,1])
+    lengthx = maxx - minx
+    lengthy = maxy-miny
+
+    
     array = np.zeros((nuv,nuv))
-    for (u,v) in bl:
-        k = (nuv/2 -1) + (u/(length/nuv))
-        l = (nuv/2 -1) + (v/(length/nuv))
+    
+    for (u,v) in points:
+
+        k = (nuv/2 -1) + (u/(lengthx/nuv))
+        l = (nuv/2 -1) + (v/(lengthy/nuv))
+           
 
         array[(k,l)] = 1
+
+
+        
     return array
 
 
-def earth_rotation_synthesis(array,nuv):
-    finalsky = np.zeros((nuv,nuv))
-    listr = []
-    lists = []
+def earth_rotation_synthesis(bl,nuv):
 
-    for (x,y),value in np.ndenumerate(array):
-        #print x,y,value
-        skypoint = np.array([x,y,0])
-        Hs = np.array([0,1,2,3])*np.pi/4.0
-        #H = [np.pi/2.0]
-        for H in Hs :
-            d = 0.1
-            d= np.pi/2.0
-            rotation_array = np.array([[np.sin(H), np.cos(H), 0], [-np.sin(d)*np.cos(H), np.sin(d)*np.sin(H), np.cos(d)], [np.cos(H)*np.cos(d), (-1*np.cos(d)*np.sin(H)), np.sin(d)]])
-            #print rotation_array
-            rotated = np.dot(rotation_array, skypoint)
-            #print rotated, skypoint
-            
-            p = rotated[0]
-    
-            q = rotated[1]
-         
-
-            if np.isfinite(p)==True and np.isfinite(q)== True and value>0.0:
-                listr.append(int(p))
-                lists.append(int(q))
-
-            else:
-                continue
-
-    i = np.array(listr)
-    j = np.array(lists)
-    x = i * (nuv-1) / max(np.absolute(listr))
-    y = j * (nuv-1) / max(np.absolute(lists))
-
-    #print x
-
-    for indx in range(len(y)):
-        finalsky[(x[indx],y[indx])]=1
-
-    #for i in listr:
-    #            
-    #    for j in lists:
-    #        x= i*nuv / max(np.absolute(listr)) 
-    #        y = j*nuv/ max(np.absolute(lists)) 
-    #        finalsky[(x,y)] =1
-
-    return finalsky
+    points = []
+    Hs = [0,1,2,3,4,5,6,7,8,9,10,11,12]
+    d = np.pi/2
+    for (u,v) in bl:
+        skypoint = (u,v,0)
         
+        for H in Hs:
+            rotation_array = np.array([[np.sin(H), np.cos(H), 0], [-np.sin(d)*np.cos(H), np.sin(d)*np.sin(H), np.cos(d)], [np.cos(H)*np.cos(d), (-1*np.cos(d)*np.sin(H)), np.sin(d)]])
+            rotated = np.dot(rotation_array, skypoint)
+            points.append((rotated[0],rotated[1]))
 
-            
-         
+    return points
+
     
 
 def small_interferometer(nuv,r): #<100 antennae
@@ -170,15 +152,22 @@ def small_interferometer(nuv,r): #<100 antennae
 
     rotated = earth_rotation_synthesis(uvplane,nuv)
 
-    view_uvplane = make_image(rotated)
-    
-    #sampled_sky = sample(ftgal,uvplane)
-    
-    #dirty_image = fft.ifft2(sampled_sky)
+    gridded = grid(rotated,nuv)
 
-    #dirtybeam = dirty_beam(uvplane)
+    make_image(gridded)
+    
+    sampled_sky = sample(ftgal,gridded)
+    
+    dirty_image = fft.ifft2(sampled_sky)
 
-    #deconvolved = hogbom(dirty_image, dirtybeam, True, 0.1, 1, 1000)
+    make_image(dirty_image)
+
+    dirtybeam = fft.fft2(grid(uvplane,nuv))
+
+    deconvolved = hogbom(dirty_image, dirtybeam, True, 0.1, 0.1, 1000)
+
+    make_image(deconvolved)
+
 
 
 def large_interferometer(filename): #large >100 antennae
@@ -193,14 +182,16 @@ def large_interferometer(filename): #large >100 antennae
 
     
 
-    #sampled_sky = sample(ftgal, uvplane) 
+    sampled_sky = sample(ftgal, uvplane) 
 
 
-    #dirty_image = inv_twod_ft(sampled_sky)
+    dirty_image = inv_twod_ft(sampled_sky)
 
-    #dirty_image_view = make_image(dirty_image)
+    dirty_image_view = make_image(dirty_image)
 
-    #clean_image = deconvolve(dirty_image)
+    clean_image = hogbom(dirty_image, dirtybeam, True, 0.3, 0.1, 100)
+
+    make_image(clean_image)
 
 
 def redshifted_lambda(z):
@@ -241,10 +232,8 @@ def angofres():
 
     return angle_of_resolution
 
+
     
-
-
-
 def overlapIndices(a1, a2, 
                    shiftx, shifty):
     if shiftx >=0:
@@ -305,7 +294,7 @@ def hogbom(dirty,
         window=np.ones(dirty.shape,
                           np.bool)
     for i in range(niter):
-        mx, my=np.unravel_index(np.argmax(np.absolute(res[window])), res.shape)
+        mx, my=np.unravel_index(np.absolute(res[window]).argmax(), res.shape)
         mval=res[mx, my]*gain
         comps[mx, my]+=mval
         a1o, a2o=overlapIndices(dirty, psf,
@@ -313,7 +302,19 @@ def hogbom(dirty,
                                 my-dirty.shape[1]/2)
         res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
         if np.absolute(res).max() < thresh:
-           break
+            break
+
+
+    return comps
+
+
+        
+    
+    
+        
+        
+    
+           
 
    
         
