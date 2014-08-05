@@ -4,6 +4,7 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.misc as misc
+import math
 
 
 """to run:
@@ -32,9 +33,9 @@ def image_input(filename):
 
     
 
-def make_image(array):  
+def make_image(array):
     array = np.real(array)
-    imgplot = plt.imshow(np.absolute(array), cmap = "gist_yarg")
+    imgplot = plt.imshow(array, cmap = "gist_yarg")
     imgplot.set_clim(0.001, 0.002)
     plt.colorbar()
     plt.show()
@@ -99,39 +100,45 @@ def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling di
 
         array[(k,l)] = 1
     return array
-    return length
 
-    
-        
-"""def earth_rotation_synthesis(array,nuv):
-    
 
+def earth_rotation_synthesis(array,nuv):
     finalsky = np.zeros((nuv,nuv))
-    uvlist = []
-    for x,y in np.ndenumerate(array):
-        uvlist.append((x,y))
+    listr = []
+    lists = []
 
+    for (x,y),value in np.ndenumerate(array):
+        skypoint = np.array([[x],[y],[0]])
+        H = [0,1,2,3]
+        for i in H :
+            d = 0.1
+            rotation_array = np.array([[np.sin(i), np.cos(i), 0], [-np.sin(d)*np.cos(i), np.sin(d)*np.sin(i), np.cos(d)], [np.cos(i)*np.cos(d), (-1*np.cos(d)*np.sin(i)), np.sin(d)]])
+            rotated = np.dot(rotation_array, skypoint)
+ 
+            p = rotated[0]
+    
+            q = rotated[1]
+         
+
+            if np.isfinite(p)==True and np.isfinite(q)== True:
+                listr.append(int(p))
+                lists.append(int(q))
+
+            else:
+                continue
+
+    for i in listr:
+                
+        for j in lists:
+            x= i*nuv / max(np.absolute(listr)) 
+            y = j*nuv/ max(np.absolute(lists)) 
+            finalsky[(x,y)] =1
+
+    return finalsky
         
-    for (x,y) in uvlist:
-       skypoint = np.array([[x],[y],[0]])
-       for H in range(0,3,1):
-           d = 0
-           rotation_array = np.array([[np.sin(H), np.cos(H), 0], [-np.sin(d)*np.cos(H), np.sin(d)*np.sin(H), np.cos(d)], [np.cos(x)*np.cos(d), (-1*np.cos(d)*np.sin(x)), np.sin(d)]])
-           rotated = np.dot(rotation_array, skypoint) #this is giving a weird error- ValueError: setting an array element with a sequence.
-           p = nuv/2 + int(rotated[0]) 
-           q= nuv/2 + int(rotated[1])
-           finalsky[(p,q)] = 1
-           
-    final_sky = np.real(finalsky)
-    imgplot = plt.imshow(final_sky, cmap = "gist_yarg")
-    plt.show()      
 
-
-    return final_sky"""
             
          
-    
-    
     
 
 def small_interferometer(nuv,r): #<100 antennae
@@ -145,21 +152,23 @@ def small_interferometer(nuv,r): #<100 antennae
     ftgal = fft.fft2(galaxy)
     
     uvplane = discrete_uv_VLA(telescope, nuv)
+
+    rotated = earth_rotation_synthesis(uvplane,nuv)
+
+    view_uvplane = make_image(rotated)
     
-    sampled_sky = sample(ftgal,uvplane)
+    #sampled_sky = sample(ftgal,uvplane)
     
-    dirty_image = fft.ifft2(sampled_sky)
+    #dirty_image = fft.ifft2(sampled_sky)
 
-    dirtybeam = dirty_beam(uvplane)
+    #dirtybeam = dirty_beam(uvplane)
 
-    deconvolved = hogbom(dirty_image, dirtybeam, True, 0.1, 1, 10000)
-
-    clean_image_view = make_image(deconvolved)
+    #deconvolved = hogbom(dirty_image, dirtybeam, True, 0.1, 1, 1000)
 
 
 def large_interferometer(filename): #large >100 antennae
 
-    galaxy = make_image(filename)
+    galaxy =create_disc(filename)
     
     ftgal = twod_FT(galaxy) 
 
@@ -167,12 +176,14 @@ def large_interferometer(filename): #large >100 antennae
 
     uvplane = continuous_uv_plane(telescope, telescope) # take output of make_antennas
 
-    sampled_sky = sample(ftgal, uvplane) 
+    
+
+    #sampled_sky = sample(ftgal, uvplane) 
 
 
-    dirty_image = inv_twod_ft(sampled_sky)
+    #dirty_image = inv_twod_ft(sampled_sky)
 
-    dirty_image_view = make_image(dirty_image)
+    #dirty_image_view = make_image(dirty_image)
 
     #clean_image = deconvolve(dirty_image)
 
@@ -279,16 +290,17 @@ def hogbom(dirty,
         window=np.ones(dirty.shape,
                           np.bool)
     for i in range(niter):
-        mx, my=np.unravel_index(np.fabs(res[window]).argmax(), res.shape)
+        mx, my=np.unravel_index(np.argmax(np.absolute(res[window])), res.shape)
         mval=res[mx, my]*gain
         comps[mx, my]+=mval
         a1o, a2o=overlapIndices(dirty, psf,
                                 mx-dirty.shape[0]/2,
                                 my-dirty.shape[1]/2)
         res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
-        if np.fabs(res).max() < thresh:
-            break
-    return comps, res
+        if np.absolute(res).max() < thresh:
+           break
+
+   
         
         
 
