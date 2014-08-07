@@ -1,3 +1,7 @@
+import os, sys
+lib_path = os.path.abspath('../PyMods/')
+sys.path.append(lib_path)
+
 import numpy as np
 import numpy.fft as fft
 import matplotlib.image as mpimg
@@ -5,6 +9,7 @@ import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.misc as misc
 import math
+import aipy
 
 
 """to run:
@@ -37,8 +42,13 @@ def make_image(array):
     array = np.real(array)
     imgplot = plt.imshow(array, cmap = "gist_yarg")
     imgplot.set_clim(0.001, 0.002)
-    plt.colorbar()
     plt.show()
+
+def make_final_image(array):
+    array = np.real(array)
+    imgplot = plt.imshow(array)
+    plt.show()
+    
 
 
 def sample(array1,array2):
@@ -136,7 +146,6 @@ def earth_rotation_synthesis(bl,nuv):
 
     return points
 
-    
 
 def small_interferometer(nuv,r): #<100 antennae
 
@@ -154,19 +163,26 @@ def small_interferometer(nuv,r): #<100 antennae
 
     gridded = grid(rotated,nuv)
 
-    make_image(gridded)
-    
     sampled_sky = sample(ftgal,gridded)
-    
+
     dirty_image = fft.ifft2(sampled_sky)
 
     make_image(dirty_image)
 
-    dirtybeam = fft.fft2(grid(uvplane,nuv))
+    dirtybeam = np.real(fft.ifft(fft.fftshift(gridded)))
 
-    deconvolved = hogbom(dirty_image, dirtybeam, True, 0.1, 0.1, 1000)
+    make_image(dirtybeam)
 
-    make_image(deconvolved)
+    deconvolved = aipy.deconv.clean(dirty_image, dirtybeam)
+    
+    make_final_image(deconvolved)
+    
+
+    
+
+
+
+   
 
 
 
@@ -187,9 +203,10 @@ def large_interferometer(filename): #large >100 antennae
 
     dirty_image = inv_twod_ft(sampled_sky)
 
-    dirty_image_view = make_image(dirty_image)
+    
 
-    clean_image = hogbom(dirty_image, dirtybeam, True, 0.3, 0.1, 100)
+
+    clean_image = hogbom(dirtyimage, dirtybeam, True, 0.3, 0.1, 100)
 
     make_image(clean_image)
 
@@ -233,7 +250,7 @@ def angofres():
     return angle_of_resolution
 
 
-    
+
 def overlapIndices(a1, a2, 
                    shiftx, shifty):
     if shiftx >=0:
@@ -289,49 +306,22 @@ def hogbom(dirty,
     threshold "thresh" is not hit
     """
     comps=np.zeros(dirty.shape)
-    res=np.array(dirty)
+    res= dirty
     if window is True:
         window=np.ones(dirty.shape,
                           np.bool)
     for i in range(niter):
-        mx, my=np.unravel_index(np.absolute(res[window]).argmax(), res.shape)
+        mx, my=np.unravel_index(np.abs(res[window]).argmax(), res.shape)
         mval=res[mx, my]*gain
-        comps[mx, my]+=mval
+        comps[mx, my] += mval
         a1o, a2o=overlapIndices(dirty, psf,
-                                mx-dirty.shape[0]/2,
-                                my-dirty.shape[1]/2)
+                                (mx-dirty.shape[0])/2,
+                                (my-dirty.shape[1])/2)
         res[a1o[0]:a1o[1],a1o[2]:a1o[3]]-=psf[a2o[0]:a2o[1],a2o[2]:a2o[3]]*mval
-        if np.absolute(res).max() < thresh:
-            break
-
+        if np.abs(res).max() < thresh:
+            continue
+    
 
     return comps
 
 
-        
-    
-    
-        
-        
-    
-           
-
-   
-        
-        
-
-
-
-
-
-
-    
-
-
-
-
-
-
-    
-
-    
