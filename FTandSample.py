@@ -1,5 +1,5 @@
 import os, sys
-lib_path = os.path.abspath('../PyMods/')
+lib_path = os.path.abspath('/home/ec511/aipy-0.8.5')
 sys.path.append(lib_path)
 
 import numpy as np
@@ -8,8 +8,10 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.misc as misc
+import scipy.fftpack as fftpack
 import math
 import aipy
+import pylab
 
 
 """to run:
@@ -146,12 +148,22 @@ def earth_rotation_synthesis(bl,nuv):
 
     return points
 
+def dirty_beam(array):
+
+    beam = fft.fftshift(fft.ifft2(array))
+    return beam
+    
+
+
+
 
 def small_interferometer(nuv,r): #<100 antennae
 
     centre = nuv/2
     
     galaxy = create_disc(nuv,nuv,centre,centre,r,nuv)
+
+    make_image(galaxy)
 
     telescope = VLA_D_config
 
@@ -169,20 +181,17 @@ def small_interferometer(nuv,r): #<100 antennae
 
     make_image(dirty_image)
 
-    dirtybeam = np.real(fft.ifft(fft.fftshift(gridded)))
+    dirtybeam = dirty_beam(gridded)
 
     make_image(dirtybeam)
 
-    deconvolved = aipy.deconv.clean(dirty_image, dirtybeam)
-    
-    make_final_image(deconvolved)
-    
+    deconvolved = aipy.deconv.lsq(dirty_image, dirtybeam)
 
-    
+    make_image(deconvolved[0])
 
 
 
-   
+
 
 
 
@@ -202,9 +211,6 @@ def large_interferometer(filename): #large >100 antennae
 
 
     dirty_image = inv_twod_ft(sampled_sky)
-
-    
-
 
     clean_image = hogbom(dirtyimage, dirtybeam, True, 0.3, 0.1, 100)
 
@@ -321,7 +327,6 @@ def hogbom(dirty,
         if np.abs(res).max() < thresh:
             continue
     
-
     return comps
 
 
