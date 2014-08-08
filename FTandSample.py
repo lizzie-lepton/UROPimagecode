@@ -148,9 +148,10 @@ def earth_rotation_synthesis(bl,nuv):
 
     return points
 
-def dirty_beam(array):
+def dirty(array):
 
     beam = fft.fftshift(fft.ifft2(array))
+    psd2D = np.abs( beam )**2
     return beam
     
 
@@ -168,6 +169,8 @@ def small_interferometer(nuv,r): #<100 antennae
     telescope = VLA_D_config
 
     ftgal = fft.fft2(galaxy)
+
+    make_image(ftgal)
     
     uvplane = discrete_uv_VLA(telescope, nuv)
 
@@ -181,7 +184,7 @@ def small_interferometer(nuv,r): #<100 antennae
 
     make_image(dirty_image)
 
-    dirtybeam = dirty_beam(gridded)
+    dirtybeam = dirty(gridded)
 
     make_image(dirtybeam)
 
