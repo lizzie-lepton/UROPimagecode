@@ -153,7 +153,12 @@ def dirty(array):
     beam = fft.ifft2(array)
     return beam
     
-
+def set_pixel_size(r, nuv):
+    angularwidth = 3000 #pc
+    pixels_across = (2*r)
+    real_pixel_size = angularwidth/pixels_across
+    print real_pixel_size, "parsecs"
+    
 
 
 
@@ -163,11 +168,13 @@ def small_interferometer(nuv,r): #<100 antennae
     
     galaxy = create_disc(nuv,nuv,centre,centre,r,nuv)
 
+    make_image(galaxy)
+
+    set_pixel_size(r,nuv)
+
     telescope = VLA_D_config
 
     ftgal = fft.fftshift(fft.fft2(galaxy))
-
-    make_image(ftgal)
 
     uvplane = discrete_uv_VLA(telescope, nuv)
 
@@ -185,7 +192,7 @@ def small_interferometer(nuv,r): #<100 antennae
 
     make_image(dirtybeam)
 
-    deconvolved = aipy.deconv.lsq(dirty_image,dirtybeam, gain=.1, tol=1e-3, maxiter=500)
+    deconvolved = aipy.deconv.lsq(dirty_image,dirtybeam, gain=.1, tol=1e-5, maxiter=500)
 
     deconvolved =  np.abs(deconvolved[0])**2
 
