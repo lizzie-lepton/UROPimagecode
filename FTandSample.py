@@ -3,12 +3,12 @@ lib_path = os.path.abspath('/home/ec511/aipy-0.8.5')
 sys.path.append(lib_path)
 
 import numpy as np
-import numpy.fft as fft
+
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.misc as misc
-import scipy.fftpack as fftpack
+import scipy.fftpack as fft
 import math
 import aipy
 import pylab
@@ -150,8 +150,7 @@ def earth_rotation_synthesis(bl,nuv):
 
 def dirty(array):
 
-    beam = fft.fftshift(fft.ifft2(array))
-    psd2D = np.abs( beam )**2
+    beam = fft.ifft2(array)
     return beam
     
 def set_pixel_size(r, nuv):
@@ -163,7 +162,12 @@ def set_pixel_size(r, nuv):
 
 
 
-def small_interferometer(nuv,r): #<100 antennae
+def small_interferometer(nuv,r): 
+
+    """
+    small interferometer is defined as having less than 100 antennas. Currently using VLA's D configuration.
+    nuv: number of pixels per side in array
+    r: radius of galaxy"""
 
     centre = nuv/2
     
@@ -171,22 +175,14 @@ def small_interferometer(nuv,r): #<100 antennae
 
     make_image(galaxy)
 
-<<<<<<< HEAD
     set_pixel_size(r,nuv)
 
     angofres()
 
-=======
->>>>>>> 1eef834742d1c3bd0c09eea429ed70754514ba9e
     telescope = VLA_D_config
 
-    ftgal = fft.fft2(galaxy)
+    ftgal = fft.fftshift(fft.fft2(galaxy))
 
-<<<<<<< HEAD
-=======
-    make_image(ftgal)
-    
->>>>>>> 1eef834742d1c3bd0c09eea429ed70754514ba9e
     uvplane = discrete_uv_VLA(telescope, nuv)
 
     rotated = earth_rotation_synthesis(uvplane,nuv)
@@ -195,22 +191,22 @@ def small_interferometer(nuv,r): #<100 antennae
 
     sampled_sky = sample(ftgal,gridded)
 
-    dirty_image = fft.ifft2(sampled_sky)
+    dirty_image =fft.ifft2(fft.ifftshift(sampled_sky))
 
     make_image(dirty_image)
 
-    dirtybeam = dirty(gridded)
+    dirtybeam =fft.ifftshift (dirty(gridded))
 
     make_image(dirtybeam)
 
-<<<<<<< HEAD
     deconvolved = aipy.deconv.lsq(dirty_image,dirtybeam, gain=.1, tol=1e-5, maxiter=500)
-=======
-    deconvolved = aipy.deconv.lsq(dirty_image, dirtybeam)
->>>>>>> 1eef834742d1c3bd0c09eea429ed70754514ba9e
 
-    make_image(deconvolved[0])
+    deconvolved =  np.abs(deconvolved[0])**2
 
+    imgplot = plt.imshow(deconvolved, cmap = "gist_yarg")
+
+    plt.show()
+    
 
 
 
@@ -227,10 +223,7 @@ def large_interferometer(filename): #large >100 antennae
 
     uvplane = continuous_uv_plane(telescope, telescope) # take output of make_antennas
 
-    
-
     sampled_sky = sample(ftgal, uvplane) 
-
 
     dirty_image = inv_twod_ft(sampled_sky)
 
@@ -241,7 +234,6 @@ def large_interferometer(filename): #large >100 antennae
 
 def redshifted_lambda(z):
     lambda_obs = (1+z)* 0.21
-
     return lambda_obs
 
 
@@ -350,5 +342,3 @@ def hogbom(dirty,
             continue
     
     return comps
-
-
