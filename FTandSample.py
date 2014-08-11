@@ -3,12 +3,12 @@ lib_path = os.path.abspath('/home/ec511/aipy-0.8.5')
 sys.path.append(lib_path)
 
 import numpy as np
-import numpy.fft as fft
+
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.misc as misc
-import scipy.fftpack as fftpack
+import scipy.fftpack as fft
 import math
 import aipy
 import pylab
@@ -150,8 +150,7 @@ def earth_rotation_synthesis(bl,nuv):
 
 def dirty(array):
 
-    beam = fft.fftshift(fft.ifft2(array))
-    psd2D = np.abs( beam )**2
+    beam = fft.ifft2(array)
     return beam
     
 
@@ -164,14 +163,12 @@ def small_interferometer(nuv,r): #<100 antennae
     
     galaxy = create_disc(nuv,nuv,centre,centre,r,nuv)
 
-    make_image(galaxy)
-
     telescope = VLA_D_config
 
-    ftgal = fft.fft2(galaxy)
+    ftgal = fft.fftshift(fft.fft2(galaxy))
 
     make_image(ftgal)
-    
+
     uvplane = discrete_uv_VLA(telescope, nuv)
 
     rotated = earth_rotation_synthesis(uvplane,nuv)
@@ -180,18 +177,22 @@ def small_interferometer(nuv,r): #<100 antennae
 
     sampled_sky = sample(ftgal,gridded)
 
-    dirty_image = fft.ifft2(sampled_sky)
+    dirty_image =fft.ifft2(fft.ifftshift(sampled_sky))
 
     make_image(dirty_image)
 
-    dirtybeam = dirty(gridded)
+    dirtybeam =fft.ifftshift (dirty(gridded))
 
     make_image(dirtybeam)
 
-    deconvolved = aipy.deconv.lsq(dirty_image, dirtybeam)
+    deconvolved = aipy.deconv.lsq(dirty_image,dirtybeam, gain=.1, tol=1e-3, maxiter=500)
 
-    make_image(deconvolved[0])
+    deconvolved =  np.abs(deconvolved[0])**2
 
+    imgplot = plt.imshow(deconvolved, cmap = "gist_yarg")
+
+    plt.show()
+    
 
 
 
@@ -331,5 +332,3 @@ def hogbom(dirty,
             continue
     
     return comps
-
-
