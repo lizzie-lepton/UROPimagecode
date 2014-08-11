@@ -157,7 +157,7 @@ def set_pixel_size(r, nuv):
     angularwidth = 3000 #pc
     pixels_across = (2*r)
     real_pixel_size = angularwidth/pixels_across
-    print real_pixel_size, "parsecs"
+    print "each pixel has a width of ", real_pixel_size, "parsecs"
     
 
 
@@ -171,6 +171,8 @@ def small_interferometer(nuv,r): #<100 antennae
     make_image(galaxy)
 
     set_pixel_size(r,nuv)
+
+    angofres()
 
     telescope = VLA_D_config
 
@@ -264,7 +266,7 @@ def angofres():
 
     angle_of_resolution = redshifted_lambda(1)/ bl_max
 
-    return angle_of_resolution
+    print "The angle of resolution is ", angle_of_resolution, "arcseconds"
 
 
 
