@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os, sys
 lib_path = os.path.abspath('/home/ec511/aipy-0.8.5')
 sys.path.append(lib_path)
@@ -93,7 +94,7 @@ def dirty_beam(array):
                 
 
 
-def discrete_uv_VLA(antennas, nuv): #a method to get the discrete uv sampling distribution for the VLA telescope. will generalise for other telescopes soon
+def discrete_uv(antennas, nuv): #a method to get the discrete uv sampling distribution for the VLA telescope. will generalise for other telescopes soon
     antennas = antennas()
     basel = []
     for x,y in antennas:
@@ -179,11 +180,11 @@ def small_interferometer(nuv,r):
 
     angofres()
 
-    telescope = VLA_D_config
+    telescope = ASKAP_configuration
 
     ftgal = fft.fftshift(fft.fft2(galaxy))
 
-    uvplane = discrete_uv_VLA(telescope, nuv)
+    uvplane = discrete_uv(telescope, nuv)
 
     rotated = earth_rotation_synthesis(uvplane,nuv)
 
@@ -261,13 +262,17 @@ def VLA_D_config():
 
     return b
 
+def ASKAP_configuration():
+    b = [(-175, -1673), (261, -797), (-29, -744), (-289, -587), (-157, -816), (-521, -755), (-1061, -841), (-922, -998), (-818, -1142), (-532, -851), (81, -790), (31, -1209), (-1165, -317), (-686, -590), (-499, -506), (-182, -365), (421, -811), (804, -1273), (-463, -236), (-450, -15), (14, -111), (-426, 182), (-333, 504), (-1495, -1416), (-1039, -1128), (-207, -956), (-389, -482), (-434, -510), (-398, -462), (-425, -475), (-400, -3664), (1796, -1468), (600, 1532), (-400, 2336), (-3400, 1532), (-2596, -1468)]
+    return b
+
 def angofres():
 
     bl_max = np.sqrt((527.6 + 592.4*(np.sin(np.pi/6)))**2 + (np.sin(np.pi/6))**2)
 
     angle_of_resolution = redshifted_lambda(1)/ bl_max
 
-    print "The angle of resolution is ", angle_of_resolution, "arcseconds"
+    print "The angle of resolution of this interferometer is ", angle_of_resolution, "arcseconds"
 
 
 
