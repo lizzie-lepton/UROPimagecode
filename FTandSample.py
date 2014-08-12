@@ -9,6 +9,7 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.misc as misc
+import scipy
 import scipy.fftpack as fft
 import math
 import aipy
@@ -52,7 +53,6 @@ def make_final_image(array):
     imgplot = plt.imshow(array)
     plt.show()
     
-
 
 def sample(array1,array2):
     array1 = np.real(array1)
@@ -174,6 +174,10 @@ def small_interferometer(nuv,r):
     
     galaxy = create_disc(nuv,nuv,centre,centre,r,nuv)
 
+    angular_width_of_galaxy = (2*r / 1e6)*206265
+
+    print "angular width of galaxy is", angular_width_of_galaxy, "arcseconds"
+
     make_image(galaxy)
 
     set_pixel_size(r,nuv)
@@ -186,6 +190,8 @@ def small_interferometer(nuv,r):
 
     uvplane = discrete_uv(telescope, nuv)
 
+    make_image(grid(uvplane,nuv))
+
     rotated = earth_rotation_synthesis(uvplane,nuv)
 
     gridded = grid(rotated,nuv)
@@ -196,7 +202,9 @@ def small_interferometer(nuv,r):
 
     make_image(dirty_image)
 
-    dirtybeam =fft.ifftshift (dirty(gridded))
+    dirtybeam =fft.ifftshift(dirty(gridded))
+
+    x = size_of_beam(uvplane,nuv)
 
     make_image(dirtybeam)
 
@@ -210,8 +218,38 @@ def small_interferometer(nuv,r):
     
 
 
+def size_of_beam(uvplane, nuv):
+#fourier transform of the antennas makes beam
+# so FT of width of antenna array is the size in Fspace of the beam
+
+    real_space= grid(uvplane,nuv)
+
+    maxx, maxy = np.max(real_space[:,0]), np.max(real_space[:,1])
+    minx, miny = np.min(real_space[:,0]), np.min(real_space[:,1])
+    lengthx = np.abs(maxx - minx)
+    lengthy = np.abs(maxy-miny)
 
 
+    real_size = lengthx
+
+    integrand = lambda x: real_size* np.exp( -2* np.pi * np.sqrt(-1) * x)
+
+    #angular_width = scipy.integrate.quad(integrand, -np.inf, np.inf)
+    
+    
+
+    
+
+    print "The width of the beam in uv space is", angle_width, "arcseconds"
+
+
+
+
+   
+
+    
+
+    
 
 
 def large_interferometer(filename): #large >100 antennae
@@ -270,9 +308,11 @@ def angofres():
 
     bl_max = np.sqrt((527.6 + 592.4*(np.sin(np.pi/6)))**2 + (np.sin(np.pi/6))**2)
 
-    angle_of_resolution = redshifted_lambda(1)/ bl_max
+    angle_of_resolution = 0.21/ bl_max
 
-    print "The angle of resolution of this interferometer is ", angle_of_resolution, "arcseconds"
+    convert_to_arcseconds = (180 * 3600* angle_of_resolution)/(np.pi)
+
+    print "The angle of resolution of this interferometer is ", convert_to_arcseconds, "arcseconds"
 
 
 
