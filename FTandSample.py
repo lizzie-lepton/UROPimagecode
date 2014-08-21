@@ -14,7 +14,7 @@ import scipy.fftpack as fft
 import math
 import aipy
 import pylab
-
+import cosmoconstants as cc
 
 """to run:
 
@@ -34,6 +34,24 @@ def create_disc(j, k,a, b, r, n):
     mask = x*x + y*y <= r*r
     array[mask]= 1
     return array
+
+
+def openbox(filename, nuv):
+   
+    size = nuv*nuv*nuv
+    dtype = 'float32'
+    fd = open(filename,'rb')
+    read_data = np.fromfile(fd,dtype)
+    fd.close()
+
+    print 'openBox-> Number of pixels in box should be:', size, 'data is in fact', len(read_data)
+
+    if not size==len(read_data):
+        print 'tocm.py(openBox) Error: Read box does not match expected size=',nuv,'...'
+        sys.exit(1)
+    else:
+        return np.array(read_data) #returns the array as a numpy array
+
 
 
 def image_input(filename):
@@ -163,16 +181,15 @@ def set_pixel_size(r, nuv):
 
 
 
-def small_interferometer(nuv,r): 
+def small_interferometer(nuv): 
 
     """
     small interferometer is defined as having less than 100 antennas. Currently using VLA's D configuration.
     nuv: number of pixels per side in array
     r: radius of galaxy"""
-
-    centre = nuv/2
     
-    galaxy = create_disc(nuv,nuv,centre,centre,r,nuv)
+    
+    galaxy = openbox("home/ec511/21cmFAST/Boxes/", nuv)
 
     angular_width_of_galaxy = (2*r / 1e6)*206265
 
@@ -204,7 +221,9 @@ def small_interferometer(nuv,r):
 
     dirtybeam =fft.ifftshift(dirty(gridded))
 
-    x = size_of_beam(uvplane,nuv)
+    size_of_beam(uvplane,nuv)
+
+    size_of_beam2(telescope, nuv)
 
     make_image(dirtybeam)
 
@@ -224,23 +243,36 @@ def size_of_beam(uvplane, nuv):
 
     real_space= grid(uvplane,nuv)
 
+    real_space = fft.fft2(real_space)
+
     maxx, maxy = np.max(real_space[:,0]), np.max(real_space[:,1])
     minx, miny = np.min(real_space[:,0]), np.min(real_space[:,1])
     lengthx = np.abs(maxx - minx)
     lengthy = np.abs(maxy-miny)
 
 
-    real_size = lengthx
-
-    integrand = lambda x: real_size* np.exp( -2* np.pi * np.sqrt(-1) * x)
-
-    #angular_width = scipy.integrate.quad(integrand, -np.inf, np.inf)
+    angular_width = (lengthx / 1e6) * (180/ np.pi) * (3600)
+    
+    
     
     
 
     
 
-    print "The width of the beam in uv space is", angle_width, "arcseconds"
+    print "The width of the beam in uv space is", angular_width, "arcseconds"
+
+
+def size_of_beam2(telescope, nuv):
+    baselines = discrete_uv(telescope,nuv)
+
+    for u,v in baselines:
+       #would simpson rule work here?
+        pass
+       
+
+    
+    
+    
 
 
 
