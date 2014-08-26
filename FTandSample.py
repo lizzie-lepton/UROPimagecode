@@ -15,6 +15,7 @@ import math
 import aipy
 import pylab
 import cosmoconstants as cc
+import Cosmology as co
 
 """to run:
 
@@ -36,9 +37,9 @@ def create_disc(j, k,a, b, r, n):
     return array
 
 
-def openbox(filename, nuv):
+def openbox(filename, dim):
    
-    size = nuv*nuv*nuv
+    size = dim*dim*dim
     dtype = 'float32'
     fd = open(filename,'rb')
     read_data = np.fromfile(fd,dtype)
@@ -47,10 +48,20 @@ def openbox(filename, nuv):
     print 'openBox-> Number of pixels in box should be:', size, 'data is in fact', len(read_data)
 
     if not size==len(read_data):
-        print 'tocm.py(openBox) Error: Read box does not match expected size=',nuv,'...'
+        print 'tocm.py(openBox) Error: Read box does not match expected size=',dim,'...'
         sys.exit(1)
+
+        
     else:
-        return np.array(read_data) #returns the array as a numpy array
+        data =  np.vstack(read_data)
+        newshape = np.reshape(data, (200,200,200))
+        return newshape
+        #returns the array as a numpy array
+
+def reshape(array,nuv):
+
+    newshape = np.reshape(array, (nuv,nuv))
+    return newshape
 
 
 
@@ -58,7 +69,7 @@ def image_input(filename):
     img = mpimg.imread(filename)
     return img
 
-    
+
 
 def make_image(array):
     array = np.real(array)
@@ -189,11 +200,14 @@ def small_interferometer(nuv):
     r: radius of galaxy"""
     
     
-    galaxy = openbox("home/ec511/21cmFAST/Boxes/", nuv)
+    galaxy = openbox("/home/ec511/21cmFAST/Programs/test/Boxes/delta_T_v2_no_halos_nf0.971986_z15.00_useTs0_zetaX-1.0e+00_alphaX-1.0_TvirminX-1.0e+00_aveTb33.36_200_1Mpc", 200)
 
-    angular_width_of_galaxy = (2*r / 1e6)*206265
+    #angular_width_of_galaxy = (2*r / 1e6)*206265
 
-    print "angular width of galaxy is", angular_width_of_galaxy, "arcseconds"
+    #print "angular width of galaxy is", angular_width_of_galaxy, "arcseconds"
+
+    galaxy = make_twoD(galaxy)
+
 
     make_image(galaxy)
 
