@@ -53,16 +53,17 @@ def openbox(filename, dim):
 
         
     else:
-        data =  np.vstack(read_data)
+        data = np.array(read_data)
         newshape = np.reshape(data, (200,200,200))
         return newshape
         #returns the array as a numpy array
 
-def reshape(array,nuv):
+def slices(array, z):
 
-    newshape = np.reshape(array, (nuv,nuv))
-    return newshape
+    image = array[0:,0:,z]
+    return image  
 
+    
 
 
 def image_input(filename):
@@ -72,12 +73,6 @@ def image_input(filename):
 
 
 def make_image(array):
-    array = np.real(array)
-    imgplot = plt.imshow(array, cmap = "gist_yarg")
-    imgplot.set_clim(0.001, 0.002)
-    plt.show()
-
-def make_final_image(array):
     array = np.real(array)
     imgplot = plt.imshow(array)
     plt.show()
@@ -95,33 +90,7 @@ def continuous_uv_plane(array1, array2):
 def dirty_beam(array):
     dirty_beam = fft.fft2(array)
     return dirty_beam
-
-"""def discrete_uv_plane(array):
-
-    dim = array.shape
-
-    b =np.zeros(dim)
-
-
-
-    
-        if array[x1,y1] == 0:
-            b[x1,y1] = 0
-        else:
-            for (x2,y2), value in np.ndenumerate(array):
-                if array[x2,y2] == 0:
-                    b[x2,y2] =0
-                else :
-                    u = (x1 - x2) / redshifted_lambda(1)
-                    v = (y1 - y2) / redshifted_lambda(1)
-                    if u < 8 and v<8 and u>= 0 and v >= 0:
-                        b[u,v] = 1
-                    else:
-                        pass
-                    
-    return b"""
                 
-
 
 def discrete_uv(antennas, nuv): #a method to get the discrete uv sampling distribution for the VLA telescope. will generalise for other telescopes soon
     antennas = antennas()
@@ -133,9 +102,6 @@ def discrete_uv(antennas, nuv): #a method to get the discrete uv sampling distri
             basel.append((u,v))
 
     return basel
-
-
-
 
 
 def grid(points,nuv):   
@@ -182,12 +148,14 @@ def dirty(array):
 
     beam = fft.ifft2(array)
     return beam
-    
-def set_pixel_size(r, nuv):
-    angularwidth = 3000 #pc
-    pixels_across = (2*r)
-    real_pixel_size = angularwidth/pixels_across
-    print "each pixel has a width of ", real_pixel_size, "parsecs"
+
+def size_of_pixel():
+    pass
+
+
+def comoving_distance(z):
+    distances = co.comovingDistance(z)
+    return distances
     
 
 
@@ -200,18 +168,11 @@ def small_interferometer(nuv):
     r: radius of galaxy"""
     
     
-    galaxy = openbox("/home/ec511/21cmFAST/Programs/test/Boxes/delta_T_v2_no_halos_nf0.971986_z15.00_useTs0_zetaX-1.0e+00_alphaX-1.0_TvirminX-1.0e+00_aveTb33.36_200_1Mpc", 200)
+    galaxy = openbox("/home/ec511/21cmFAST/Boxes/delta_T_v2_no_halos_nf0.538078_z10.00_useTs0_zetaX-1.0e+00_alphaX-1.0_TvirminX-1.0e+00_aveTb12.41_200_100Mpc", 200)
 
-    #angular_width_of_galaxy = (2*r / 1e6)*206265
-
-    #print "angular width of galaxy is", angular_width_of_galaxy, "arcseconds"
-
-    galaxy = make_twoD(galaxy)
-
+    galaxy = slices(galaxy)
 
     make_image(galaxy)
-
-    set_pixel_size(r,nuv)
 
     angofres()
 
@@ -237,15 +198,15 @@ def small_interferometer(nuv):
 
     size_of_beam(uvplane,nuv)
 
-    size_of_beam2(telescope, nuv)
-
     make_image(dirtybeam)
 
     deconvolved = aipy.deconv.lsq(dirty_image,dirtybeam, gain=.1, tol=1e-5, maxiter=500)
 
     deconvolved =  np.abs(deconvolved[0])**2
 
-    imgplot = plt.imshow(deconvolved, cmap = "gist_yarg")
+    imgplot = plt.imshow(deconvolved)
+
+    plt.colorbar()
 
     plt.show()
     
@@ -268,28 +229,7 @@ def size_of_beam(uvplane, nuv):
     angular_width = (lengthx / 1e6) * (180/ np.pi) * (3600)
     
     
-    
-    
-
-    
-
-    print "The width of the beam in uv space is", angular_width, "arcseconds"
-
-
-def size_of_beam2(telescope, nuv):
-    baselines = discrete_uv(telescope,nuv)
-
-    for u,v in baselines:
-       #would simpson rule work here?
-        pass
-       
-
-    
-    
-    
-
-
-
+    print "The size of the beam is ", angular_width, " arcseconds"
 
    
 
