@@ -7,6 +7,7 @@ import numpy as np
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import matplotlib
 import scipy.signal as sig
 import scipy.misc as misc
 import scipy
@@ -76,7 +77,41 @@ def make_image(array):
     array = np.real(array)
     imgplot = plt.imshow(array)
     plt.show()
+
+def final_image(array1, array2, array3, array4):
+
+    array1 = np.real(array1)
+    array2 = np.real(array2)
+    array3 = np.real(array3)
+    array4 = np.real(array4)
     
+    
+    fig = plt.figure()
+    fig.add_subplot(221, title = "True Image")    #top left
+    plt.imshow(array1)
+    plt.axis([0,100,0,100])
+    plt.xlabel("Mpc")
+    plt.ylabel("Mpc")
+    plt.colorbar()
+    fig.add_subplot(222, title = "Dirty Image")   #top right
+    plt.imshow(array2)
+    plt.axis([0,100,0,100])
+    plt.xlabel("Mpc")
+    plt.ylabel("Mpc")
+    plt.colorbar()
+    fig.add_subplot(223, title = "Observed Image")  #bottom left
+    plt.imshow(array3)
+    plt.axis([0,100,0,100])
+    plt.xlabel("Mpc")
+    plt.ylabel("Mpc")
+    plt.colorbar()
+    fig.add_subplot(224, title = "Difference between True and Observed")   #bottom right
+    plt.imshow(array4)
+    plt.axis([0,100,0,100])
+    plt.xlabel("Mpc")
+    plt.ylabel("Mpc")
+    plt.colorbar()
+    fig.show()
 
 def sample(array1,array2):
     array1 = np.real(array1)
@@ -156,8 +191,11 @@ def size_of_pixel():
 def comoving_distance(z):
     distances = co.comovingDistance(z)
     return distances
-    
 
+def difference_plot(array1, array2):
+    y_mod = np.subtract(array1, array2)   
+    
+    return y_mod
 
 
 def small_interferometer(nuv): 
@@ -170,9 +208,7 @@ def small_interferometer(nuv):
     
     galaxy = openbox("/home/ec511/21cmFAST/Boxes/delta_T_v2_no_halos_nf0.538078_z10.00_useTs0_zetaX-1.0e+00_alphaX-1.0_TvirminX-1.0e+00_aveTb12.41_200_100Mpc", 200)
 
-    galaxy = slices(galaxy)
-
-    make_image(galaxy)
+    galaxy = slices(galaxy, 0)
 
     angofres()
 
@@ -192,8 +228,6 @@ def small_interferometer(nuv):
 
     dirty_image =fft.ifft2(fft.ifftshift(sampled_sky))
 
-    make_image(dirty_image)
-
     dirtybeam =fft.ifftshift(dirty(gridded))
 
     size_of_beam(uvplane,nuv)
@@ -204,11 +238,10 @@ def small_interferometer(nuv):
 
     deconvolved =  np.abs(deconvolved[0])**2
 
-    imgplot = plt.imshow(deconvolved)
+    difference = difference_plot(galaxy, deconvolved)
 
-    plt.colorbar()
+    final_image(galaxy, dirty_image, deconvolved, difference)
 
-    plt.show()
     
 
 
