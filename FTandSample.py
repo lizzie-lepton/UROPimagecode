@@ -62,15 +62,24 @@ def openbox(filename, dim):
 def slices(array, z):
 
     image = array[0:,0:,z]
-    return image  
+    return image
 
+def scale_uv(antennas, z, nuv):
+    bl = discrete_uv(antennas, nuv)
+    bmax = bl.max
+    umax = bmax / redshifted_lambda(z)
+    umin = umax/ nuv
+    nmin = pass
+    nmax = pass
+
+def scalebox():
+    angle = 100/comoving_distance(z)
+    resampled_angle = pass #must be equal to N of uv sampling pattern
     
-
-
+    
 def image_input(filename):
     img = mpimg.imread(filename)
     return img
-
 
 
 def make_image(array):
@@ -291,7 +300,7 @@ def large_interferometer(filename): #large >100 antennae
 
 
 def redshifted_lambda(z):
-    lambda_obs = (1+z)* 0.21
+    lambda_obs = (1+z)* 0.2112
     return lambda_obs
 
 
