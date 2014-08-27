@@ -75,6 +75,21 @@ def scale_uv(antennas, z, nuv):
 def scalebox():
     angle = 100/comoving_distance(z)
     resampled_angle = pass #must be equal to N of uv sampling pattern
+
+def field_of_view(antennas, nuv, z):
+    bl = discrete_uv(antennas, nuv)
+    bmin = min(bl)
+    angfov = bmin / redshifted_lambda(z)
+    return angfov
+    
+
+def ang_of_res(antennas, nuv):
+    bl = discrete_uv(antennas, nuv)
+    bmax = bl.max
+    angres = bmax / redshifted_lambda(z)
+    return angres
+    
+                    
     
     
 def image_input(filename):
