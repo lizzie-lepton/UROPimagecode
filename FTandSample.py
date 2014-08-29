@@ -69,12 +69,24 @@ def scale_uv(antennas, z, nuv):
     bmax = bl.max
     umax = bmax / redshifted_lambda(z)
     umin = umax/ nuv
-    nmin = pass
-    nmax = pass
+    nmin = 1/ umax
+    nmax = 1/umin
 
-def scalebox():
+    return nmin, nmax
+
+def scalebox(z, nuv):
     angle = 100/comoving_distance(z)
-    resampled_angle = pass #must be equal to N of uv sampling pattern
+    resampled_angle = (angle / nuv) *200
+    return resampled_angle
+
+
+def match_scales(nuv, z, antennas):
+    nmin, nmax = scale_uv(antennas, z, nuv)
+    resampang = scalebox(z,nuv)
+
+    #nmax should equal resampang?
+    #resampang/200 = nmin?
+    
 
 def field_of_view(antennas, nuv, z):
     bl = discrete_uv(antennas, nuv)
@@ -88,13 +100,6 @@ def ang_of_res(antennas, nuv):
     bmax = bl.max
     angres = bmax / redshifted_lambda(z)
     return angres
-    
-                    
-    
-    
-def image_input(filename):
-    img = mpimg.imread(filename)
-    return img
 
 
 def make_image(array):
@@ -208,8 +213,9 @@ def dirty(array):
     beam = fft.ifft2(array)
     return beam
 
-def size_of_pixel():
-    pass
+def size_of_pixel(theta, nuv):
+    size = theta/nuv
+    return size
 
 
 def comoving_distance(z):
@@ -247,6 +253,8 @@ def small_interferometer(nuv):
     rotated = earth_rotation_synthesis(uvplane,nuv)
 
     gridded = grid(rotated,nuv)
+
+    
 
     sampled_sky = sample(ftgal,gridded)
 
