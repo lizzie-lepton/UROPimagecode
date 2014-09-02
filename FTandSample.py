@@ -8,15 +8,12 @@ import numpy as np
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import matplotlib
-import scipy.signal as sig
-import scipy.misc as misc
-import scipy
-import scipy.fftpack as fft
 import math
 import aipy
 import pylab
-import cosmoconstants as cc
-import Cosmology as co
+import numpy.fft as fft
+import Cosmology
+import cosmoconstants
 
 """to run:
 
@@ -64,28 +61,46 @@ def slices(array, z):
     image = array[0:,0:,z]
     return image
 
-def scale_uv(antennas, z, nuv):
+def comovingdist(z):
+    comov = Cosmology.comovingDistanceSingle(z)
+    return comov
+
+
+
+"""def scale_uv(antennas, z, nuv):
     bl = discrete_uv(antennas, nuv)
     bmax = bl.max
     umax = bmax / redshifted_lambda(z)
     umin = umax/ nuv
-    nmin = 1/ umax
-    nmax = 1/umin
+    nmin = 1/ umax #need to put in rads?
+    nmax = 1/umin #need to put in rads?
+    N = nmax/nmin
 
-    return nmin, nmax
+    return nmin, nmax, N
 
 def scalebox(z, nuv):
-    angle = 100/comoving_distance(z)
+    
     resampled_angle = (angle / nuv) *200
-    return resampled_angle
+    return resampled_angle 
 
 
 def match_scales(nuv, z, antennas):
-    nmin, nmax = scale_uv(antennas, z, nuv)
+    nmin, nmax, N = scale_uv(antennas, z, nuv)
     resampang = scalebox(z,nuv)
 
-    #nmax should equal resampang?
-    #resampang/200 = nmin?
+    print resampang
+    square_grid = resamsang/N"""
+
+
+def make_scaled(z):
+    angle = 100/comovingDistanceSingle(z)
+    nmax = angle
+    nmin = nmax/200
+    umax = 1/nmin
+    umin = 1/ nmax
+    nuv = umax/ umin
+    return nuv
+    
     
 
 def field_of_view(antennas, nuv, z):
@@ -140,7 +155,7 @@ def final_image(array1, array2, array3, array4):
     plt.xlabel("Mpc")
     plt.ylabel("Mpc")
     plt.colorbar()
-    fig.show()
+    plt.savefig("clean.png")
 
 def sample(array1,array2):
     array1 = np.real(array1)
@@ -217,30 +232,24 @@ def size_of_pixel(theta, nuv):
     size = theta/nuv
     return size
 
-
-def comoving_distance(z):
-    distances = co.comovingDistance(z)
-    return distances
-
 def difference_plot(array1, array2):
     y_mod = np.subtract(array1, array2)   
     
     return y_mod
 
 
-def small_interferometer(nuv): 
+def small_interferometer(z): 
 
     """
     small interferometer is defined as having less than 100 antennas. Currently using VLA's D configuration.
     nuv: number of pixels per side in array
     r: radius of galaxy"""
-    
+
+    nuv = make_scaled(z)
     
     galaxy = openbox("/home/ec511/21cmFAST/Boxes/delta_T_v2_no_halos_nf0.538078_z10.00_useTs0_zetaX-1.0e+00_alphaX-1.0_TvirminX-1.0e+00_aveTb12.41_200_100Mpc", 200)
 
-    galaxy = slices(galaxy, 0)
-
-    angofres()
+    galaxy = slices(galaxy, z)
 
     telescope = ASKAP_configuration
 
@@ -248,13 +257,9 @@ def small_interferometer(nuv):
 
     uvplane = discrete_uv(telescope, nuv)
 
-    make_image(grid(uvplane,nuv))
-
     rotated = earth_rotation_synthesis(uvplane,nuv)
 
     gridded = grid(rotated,nuv)
-
-    
 
     sampled_sky = sample(ftgal,gridded)
 
@@ -263,8 +268,6 @@ def small_interferometer(nuv):
     dirtybeam =fft.ifftshift(dirty(gridded))
 
     size_of_beam(uvplane,nuv)
-
-    make_image(dirtybeam)
 
     deconvolved = aipy.deconv.lsq(dirty_image,dirtybeam, gain=.1, tol=1e-5, maxiter=500)
 
