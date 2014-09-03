@@ -11,8 +11,10 @@ import matplotlib
 import math
 import aipy
 import pylab
+import scipy.ndimage
 import numpy.fft as fft
 import Cosmology
+cosm = Cosmology.Cosmology()
 import cosmoconstants
 
 """to run:
@@ -62,38 +64,41 @@ def slices(array, z):
     return image
 
 def comovingdist(z):
-    comov = Cosmology.comovingDistanceSingle(z)
+    comov = cD(z)
     return comov
 
 
 
-"""def scale_uv(antennas, z, nuv):
+def scale_uv(antennas, z, nuv):
     bl = discrete_uv(antennas, nuv)
-    bmax = bl.max
+    bmax = max(bl)
+    bmax = np.linalg.norm(bmax)
     umax = bmax / redshifted_lambda(z)
     umin = umax/ nuv
-    nmin = 1/ umax #need to put in rads?
-    nmax = 1/umin #need to put in rads?
+    nmin = 1/ umax #is it in rads
+    nmax = 1/umin #is it in rads
     N = nmax/nmin
 
     return nmin, nmax, N
 
 def scalebox(z, nuv):
-    
+    angle = 100/ cosm.comovingDistanceSingle(z)
     resampled_angle = (angle / nuv) *200
     return resampled_angle 
 
 
-def match_scales(nuv, z, antennas):
+def match_scales(nuv, z, antennas, galaxy):
     nmin, nmax, N = scale_uv(antennas, z, nuv)
-    resampang = scalebox(z,nuv)
+    resampledang = scalebox(z,nuv)
+    zoomfactor = nmax/resampledang
+    scaledsky = scipy.ndimage.interpolation.zoom(galaxy, zoomfactor)
+    return scaledsky
 
-    print resampang
-    square_grid = resamsang/N"""
 
 
 def make_scaled(z):
-    angle = 100/comovingDistanceSingle(z)
+    Dc = cosm.comovingDistanceSingle(z)
+    angle = 100 / Dc
     nmax = angle
     nmin = nmax/200
     umax = 1/nmin
@@ -101,11 +106,11 @@ def make_scaled(z):
     nuv = umax/ umin
     return nuv
     
-    
 
 def field_of_view(antennas, nuv, z):
     bl = discrete_uv(antennas, nuv)
     bmin = min(bl)
+    bmin = np.linalg.norm(bmin)
     angfov = bmin / redshifted_lambda(z)
     return angfov
     
@@ -113,6 +118,7 @@ def field_of_view(antennas, nuv, z):
 def ang_of_res(antennas, nuv):
     bl = discrete_uv(antennas, nuv)
     bmax = bl.max
+    bmax = np.linalg.norm(bmax)
     angres = bmax / redshifted_lambda(z)
     return angres
 
@@ -156,6 +162,8 @@ def final_image(array1, array2, array3, array4):
     plt.ylabel("Mpc")
     plt.colorbar()
     plt.savefig("clean.png")
+    plt.show()
+
 
 def sample(array1,array2):
     array1 = np.real(array1)
@@ -244,9 +252,9 @@ def small_interferometer(z):
     small interferometer is defined as having less than 100 antennas. Currently using VLA's D configuration.
     nuv: number of pixels per side in array
     r: radius of galaxy"""
-
     nuv = make_scaled(z)
-    
+
+
     galaxy = openbox("/home/ec511/21cmFAST/Boxes/delta_T_v2_no_halos_nf0.538078_z10.00_useTs0_zetaX-1.0e+00_alphaX-1.0_TvirminX-1.0e+00_aveTb12.41_200_100Mpc", 200)
 
     galaxy = slices(galaxy, z)
@@ -260,6 +268,8 @@ def small_interferometer(z):
     rotated = earth_rotation_synthesis(uvplane,nuv)
 
     gridded = grid(rotated,nuv)
+
+    #scaledsky = match_scales(nuv, z, telescope, galaxy)
 
     sampled_sky = sample(ftgal,gridded)
 
